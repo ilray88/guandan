@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FableDan 掼蛋</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- macOS title bar -->
+    <div id="titlebar">
+        <div class="traffic-lights">
+            <button id="tl-close" class="tl tl-red" title="Close" onclick="backToMenu()"></button>
+            <button id="tl-min" class="tl tl-yellow" title="Minimize"></button>
+            <button id="tl-max" class="tl tl-green" title="Skip" onclick="skipOverlay()"></button>
+        </div>
+        <div id="titlebar-title">FableDan 掼蛋</div>
+    </div>
+
+    <!-- Start screen -->
+    <div id="start-screen" class="screen active">
+        <button id="btn-lang-start" class="status-btn lang-btn-float" onclick="toggleLang()">EN</button>
+        <div class="start-panel">
+            <div class="start-content">
+                <h1 id="start-title">FableDan 掼蛋</h1>
+                <p id="start-subtitle" class="subtitle">AI 掼蛋对战</p>
+                <div class="agent-selector">
+                    <label id="label-agent" for="agent-select">AI 模型</label>
+                    <select id="agent-select"></select>
+                </div>
+                <div class="start-buttons">
+                    <button id="btn-single-round" onclick="startGame('single_round')" class="btn btn-primary btn-large">
+                        随机单局
+                    </button>
+                    <button id="btn-full-game" onclick="startGame('full_game')" class="btn btn-secondary btn-large">
+                        完整对局 (2 到 A)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game screen -->
+    <div id="game-screen" class="screen">
+        <!-- Status bar -->
+        <div id="status-bar">
+            <div class="status-left">
+                <span id="status-level"></span>
+                <span id="status-round"></span>
+                <span id="status-teams"></span>
+                <span id="status-hand"></span>
+            </div>
+            <div class="status-center">
+                <span id="status-turn"></span>
+            </div>
+            <div class="status-right">
+                <button id="btn-reset" class="status-btn" onclick="resetGame()">重置</button>
+                <button id="btn-menu" class="status-btn" onclick="backToMenu()">菜单</button>
+                <button id="btn-lang" class="status-btn" onclick="toggleLang()">EN</button>
+            </div>
+        </div>
+
+        <!-- Game table -->
+        <div id="game-table">
+            <!-- Top player (teammate) -->
+            <div id="player-top" class="player-area player-top">
+                <div class="player-label">队友</div>
+                <div class="player-top-row">
+                    <div class="player-cards-back"></div>
+                </div>
+                <div class="player-card-count"></div>
+                <div class="player-status"></div>
+            </div>
+
+            <!-- Left player (previous) -->
+            <div id="player-left" class="player-area player-left">
+                <div class="player-label">上家</div>
+                <div class="player-cards-back"></div>
+                <div class="player-card-count"></div>
+                <div class="player-status"></div>
+            </div>
+
+            <!-- Right player (next) -->
+            <div id="player-right" class="player-area player-right">
+                <div class="player-label">下家</div>
+                <div class="player-cards-back"></div>
+                <div class="player-card-count"></div>
+                <div class="player-status"></div>
+            </div>
+
+            <!-- Center area (trick display) -->
+            <div id="center-area">
+                <div id="trick-display">
+                    <div id="trick-top" class="trick-slot"></div>
+                    <div id="trick-left" class="trick-slot"></div>
+                    <div id="trick-right" class="trick-slot"></div>
+                    <div id="trick-bottom" class="trick-slot"></div>
+                </div>
+                <div id="center-message"></div>
+            </div>
+
+            <!-- Bottom player (human) -->
+            <div id="player-bottom" class="player-area player-bottom">
+                <div id="hint-area" class="hidden"></div>
+                <div id="hand-area"></div>
+                <div id="action-bar">
+                    <button id="btn-play" class="btn btn-primary" onclick="playSelected()" disabled>
+                        出牌
+                    </button>
+                    <button id="btn-clear" class="btn btn-clear" onclick="clearSelection()" disabled>
+                        取消
+                    </button>
+                    <button id="btn-pass" class="btn btn-secondary" onclick="playPass()" disabled>
+                        过
+                    </button>
+                    <button id="btn-hint" class="btn btn-hint" onclick="toggleHint()">
+                        AI提示：关
+                    </button>
+                    <button id="btn-auto" class="btn btn-auto" onclick="toggleAutoPlay()">
+                        AI托管：关
+                    </button>
+                    <button id="btn-sort" class="btn btn-secondary" onclick="toggleSortOrder()">
+                        排序：←
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Round start overlay -->
+        <div id="info-overlay" class="hidden">
+            <div class="result-content">
+                <h2 id="info-title"></h2>
+                <div id="info-details"></div>
+                <div id="info-buttons">
+                    <button id="btn-info-continue" class="btn btn-primary btn-large">
+                        开始
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disambiguation overlay (wild card ambiguity) -->
+        <div id="disambig-overlay" class="hidden">
+            <div class="result-content disambig-content">
+                <h2 id="disambig-title"></h2>
+                <div id="disambig-options"></div>
+                <div style="margin-top: 12px;">
+                    <button id="btn-disambig-cancel" class="btn btn-secondary">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Round result overlay -->
+        <div id="result-overlay" class="hidden">
+            <div class="result-content">
+                <h2 id="result-title"></h2>
+                <div id="result-details"></div>
+                <div id="result-buttons">
+                    <button id="btn-new-round" class="btn btn-primary btn-large" onclick="newRound()">
+                        再来一局
+                    </button>
+                    <button id="btn-back-menu" class="btn btn-secondary" onclick="backToMenu()">
+                        菜单
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        // Apply language on load
+        applyLang();
+    </script>
+</body>
+</html>
